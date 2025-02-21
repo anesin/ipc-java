@@ -1,23 +1,42 @@
 package com.seculetter.ipc;
 
-import java.util.Scanner;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 
 public class Child {
 
-  // stdin/out 으로 문자열 IPC
   public static void main(String[] args) {
-    Scanner scanner = new Scanner(System.in);
+    try {
+      ObjectInputStream objectInputStream = new ObjectInputStream(System.in);
+      ObjectOutputStream objectOutputStream = new ObjectOutputStream(System.out);
+      objectOutputStream.flush();
 
-    while (scanner.hasNextLine()) {
-      String input = scanner.nextLine();
-      if (input.equals("exit")) {
-        break;
+      while (true) {
+        Message receivedMessage = (Message) objectInputStream.readObject();
+        if (receivedMessage.getContent().equals("exit")) {
+          break;
+        }
+
+        String responseText = "Processed: " + receivedMessage.getContent().toUpperCase();
+        Message responseMessage = new Message(responseText);
+        objectOutputStream.writeObject(responseMessage);
+        objectOutputStream.flush();
+
+        // TEST: random crash
+        if (Math.random() < 0.5) {
+          System.out.println("Testing random crash");
+          System.exit(1);
+        }
       }
-      System.out.println("Hello, World!");
-    }
 
-    scanner.close();
+      objectInputStream.close();
+      objectOutputStream.close();
+    }
+    catch (IOException | ClassNotFoundException e) {
+      e.printStackTrace();
+    }
   }
 
 }
